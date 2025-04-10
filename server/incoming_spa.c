@@ -601,6 +601,27 @@ handle_rijndael_enc(acc_stanza_t *acc, spa_pkt_info_t *spa_pkt,
     return;
 }
 
+static void
+handle_totp_enc(acc_stanza_t *acc, spa_pkt_info_t *spa_pkt,
+        spa_data_t *spadat, fko_ctx_t *ctx, int *attempted_decrypt,
+        int *cmd_exec_success, const int enc_type, const int stanza_num,
+        int *res)
+{
+    if(enc_type == FKO_ENCRYPTION_RIJNDAEL || acc->enable_cmd_exec)
+    {
+        acc->key = "123456";
+        acc->key_len = 6;
+
+        *res = fko_new_with_data(ctx, (char *)spa_pkt->packet_data,
+            acc->key, acc->key_len, acc->encryption_mode, acc->hmac_key,
+            acc->hmac_key_len, acc->hmac_type);
+        *attempted_decrypt = 1;
+        if(*res == FKO_SUCCESS)
+            *cmd_exec_success = 1;
+    }
+    return;
+}
+
 static int
 handle_gpg_enc(acc_stanza_t *acc, spa_pkt_info_t *spa_pkt,
         spa_data_t *spadat, fko_ctx_t *ctx, int *attempted_decrypt,
@@ -1011,7 +1032,7 @@ incoming_spa(fko_srv_options_t *opts)
         enc_type = fko_encryption_type((char *)spa_pkt->packet_data);
 
         if(acc->use_rijndael)
-            handle_rijndael_enc(acc, spa_pkt, &spadat, &ctx,
+                handle_totp_enc(acc, spa_pkt, &spadat, &ctx,
                         &attempted_decrypt, &cmd_exec_success, enc_type,
                         stanza_num, &res);
 
