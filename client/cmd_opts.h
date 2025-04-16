@@ -158,6 +158,7 @@ static struct option cmd_opts[] =
     {"verbose",             0, NULL, 'v'},
     {"version",             0, NULL, 'V'},
     {"wget-cmd",            1, NULL, 'w'},
+    // TODO: add TOTP cmdline option
     {0, 0, 0, 0}
 };
 

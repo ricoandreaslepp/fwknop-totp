@@ -390,6 +390,8 @@ main(int argc, char **argv)
         key_len = 16;
     }
 
+    // TODO: add PBKDF2 if TOTP option is specified
+
     /* Finalize the context data (encrypt and encode the SPA data)
     */
     res = fko_spa_data_final(ctx, key, key_len, hmac_key, hmac_key_len);
