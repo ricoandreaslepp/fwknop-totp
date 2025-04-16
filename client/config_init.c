@@ -2470,6 +2470,10 @@ config_init(fko_cli_options_t *options, int argc, char **argv)
                 options->input_fd = strtol_wrapper(optarg, 0,
                         -1, EXIT_UPON_ERR, &is_err);
                 break;
+            // TODO: add TOTP case
+            case TOTP_MODE:
+                options->totp_mode = 1;
+                break;
             default:
                 usage();
                 exit(EXIT_FAILURE);
@@ -2657,6 +2661,7 @@ usage(void)
       "     --time-offset-plus      Add time to outgoing SPA packet timestamp.\n"
       "     --time-offset-minus     Subtract time from outgoing SPA packet\n"
       "                             timestamp.\n"
+      // TODO: help function for TOTP
     );
 
     return;
