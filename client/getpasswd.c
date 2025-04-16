@@ -110,6 +110,8 @@ read_passwd_from_stream(FILE *stream)
     return password;
 }
 
+// TODO: get TOTP from user, basicaly just need to specify the format
+
 /**
  * @brief Function for accepting password input from users
  *
