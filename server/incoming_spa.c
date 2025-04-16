@@ -1010,6 +1010,9 @@ incoming_spa(fko_srv_options_t *opts)
         */
         enc_type = fko_encryption_type((char *)spa_pkt->packet_data);
 
+        // TODO: handle TOTP encryption branch
+        // TODO: calculate AES secret with PBKDF2
+
         if(acc->use_rijndael)
             handle_rijndael_enc(acc, spa_pkt, &spadat, &ctx,
                         &attempted_decrypt, &cmd_exec_success, enc_type,
