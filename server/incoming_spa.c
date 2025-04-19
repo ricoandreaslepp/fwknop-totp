@@ -1016,7 +1016,12 @@ incoming_spa(fko_srv_options_t *opts)
 
         // store the final TOTP
         int totp_code = fko_totp();
-        const int DIGITS = 16;
+
+        log_msg(LOG_INFO,
+            "Calculated TOTP: %d",
+            totp_code);
+
+        const int DIGITS = 6;
 
         char totp[16];
         for (size_t i = 1; i <= DIGITS; i++)
@@ -1029,8 +1034,17 @@ incoming_spa(fko_srv_options_t *opts)
         {
             totp[i] = totp[i - DIGITS];
         }
+
+        log_msg(LOG_INFO,
+            "Derived workaround AES key: %s",
+            totp);
+
         memset(acc->key, 0, acc->key_len);
         memcpy(acc->key, totp, 16);
+
+        log_msg(LOG_INFO,
+            "Replaced the access.conf file key: %s",
+            acc->key);
 
         if(acc->use_rijndael)
             handle_rijndael_enc(acc, spa_pkt, &spadat, &ctx,
