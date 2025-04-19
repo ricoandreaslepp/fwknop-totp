@@ -1,22 +1,7 @@
-// libfko imports
-#include "fko_common.h"
-#include "fko.h"
-#include "hmac.h"
+#include "totp.h"
 
-// others
-#include <math.h>
-#include <time.h>
-#include <stdio.h>
-#include <string.h>
-
-#define SECRET_LEN 20
-#define HMAC_LENGTH 20
-#define TIME_LEN 8
-#define DIGITS 6 // OTP digits
-#define X 30 // default time step
-#define T0 0 // default value
-
-uint32_t dynamic_truncation(unsigned char* hmac_result)
+uint32_t 
+dynamic_truncation(unsigned char* hmac_result)
 {
     uint32_t bin_code, offset;
 
@@ -31,7 +16,8 @@ uint32_t dynamic_truncation(unsigned char* hmac_result)
     return bin_code;
 }
 
-int totp()
+int 
+fko_totp()
 {
     // store the final TOTP
     uint32_t totp;
