@@ -689,6 +689,15 @@ DLL_API const char* fko_errstr(const int err_code);
 DLL_API int fko_encryption_type(const char * const enc_data);
 
 /**
+ * \brief TODO: TOTP
+ *
+ * \param TODO: TOTP
+ *
+ * \return TODO: TOTP
+ */
+DLL_API int totp();
+
+/**
  * \brief generates random keys
  *
  * \param key_base64 pass a pointer into the function to be filled with the generated key

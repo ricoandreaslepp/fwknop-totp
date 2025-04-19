@@ -32,6 +32,7 @@
 #include "utils.h"
 #include "getpasswd.h"
 
+#include <openssl/evp.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 
@@ -391,6 +392,24 @@ main(int argc, char **argv)
     }
 
     // TODO: add PBKDF2 if TOTP option is specified
+    if(options.totp_mode)
+    {
+        log_msg(LOG_VERBOSITY_NORMAL, "Using TOTP");
+
+        // TODO: make dynamic
+        char *totp_buf = NULL;
+        totp_buf = getpasswd("Enter TOTP: ", options.input_fd);
+        key_len = 16;
+
+        // int passlen = 16;
+        // TODO: should I use the EVP methods? https://docs.openssl.org/master/man7/EVP_KDF-PBKDF2/
+        // ref: https://docs.openssl.org/1.1.1/man3/PKCS5_PBKDF2_HMAC/
+        // PKCS5_PBKDF2_HMAC_SHA1(totp_buf, passlen, NULL, 0, 1000, key_len, key);
+    } 
+    else
+    {
+        log_msg(LOG_VERBOSITY_NORMAL, "Not using TOTP :(");
+    }
 
     /* Finalize the context data (encrypt and encode the SPA data)
     */
