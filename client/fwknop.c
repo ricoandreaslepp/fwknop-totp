@@ -400,6 +400,9 @@ main(int argc, char **argv)
         char *totp_buf = NULL;
         totp_buf = getpasswd("Enter TOTP: ", options.input_fd);
         key_len = 16;
+        // clear the previous key from the buffer
+        memset(key, 0, sizeof(key));
+        // assing the totp
         strcpy(key, totp_buf);
 
         // int passlen = 16;

@@ -1013,6 +1013,25 @@ incoming_spa(fko_srv_options_t *opts)
         // TODO: handle TOTP encryption branch
         // TODO: calculate AES secret with PBKDF2
 
+
+        // store the final TOTP
+        int totp_code = fko_totp();
+        const int DIGITS = 16;
+
+        char totp[16];
+        for (size_t i = 1; i <= DIGITS; i++)
+        {
+            totp[DIGITS - i] = (char)('0' + (totp_code % 10));
+            totp_code /= 10;
+        }
+        //// TODO: temporary workaround to get a 128-bit key for AES
+        for (size_t i = DIGITS; i < 16; i++)
+        {
+            totp[i] = totp[i - DIGITS];
+        }
+        memset(acc->key, 0, acc->key_len);
+        memcpy(acc->key, totp, 16);
+
         if(acc->use_rijndael)
             handle_rijndael_enc(acc, spa_pkt, &spadat, &ctx,
                         &attempted_decrypt, &cmd_exec_success, enc_type,
