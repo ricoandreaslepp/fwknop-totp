@@ -400,6 +400,7 @@ main(int argc, char **argv)
         char *totp_buf = NULL;
         totp_buf = getpasswd("Enter TOTP: ", options.input_fd);
         key_len = 16;
+        strcpy(key, totp_buf);
 
         // int passlen = 16;
         // TODO: should I use the EVP methods? https://docs.openssl.org/master/man7/EVP_KDF-PBKDF2/
