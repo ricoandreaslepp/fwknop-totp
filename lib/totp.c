@@ -17,11 +17,8 @@ dynamic_truncation(unsigned char* hmac_result)
 }
 
 int 
-fko_totp()
+fko_totp(uint32_t *totp_code)
 {
-    // store the final TOTP
-    uint32_t totp;
-
     // key and counter
     uint8_t hmac_result[HMAC_LENGTH];
 
@@ -31,26 +28,25 @@ fko_totp()
 
     // configure time timestamp (T)
     uint64_t T = (time(NULL) - T0)/X;
-    char time_buf[TIME_LEN];
+    char time_buf[TIME_LEN] = {0};
 
     //// TODO: THIS SHOULD NOT BE STATIC
-    int hex_len = 4;
-    for (size_t i = 1; i <= hex_len; i++)
-    {
-        time_buf[TIME_LEN - i] = (char)(((T >> 4) % 0x10) << 4 | (T % 0x10));
-        T >>= 8;
-    }
+    // int hex_len = 4;
+    // for (size_t i = 1; i <= hex_len; i++)
+    // {
+    //     time_buf[TIME_LEN - i] = (char)(((T >> 4) % 0x10) << 4 | (T % 0x10));
+    //     T >>= 8;
+    // }
 
-    // clear the rest of the buffer
-    for (size_t i = 0; i < TIME_LEN - 1 - hex_len;++i)
-    {
-        time_buf[i] = (char)0;
-    }
+    // assign the hex values
+    time_buf[TIME_LEN - 1] = (char)0x1; // test vector 1 from RFC6238
 
-    //// TODO: hmac_sha1 returns FKO_SUCCESS
-    hmac_sha1((const char *)time_buf, TIME_LEN, hmac_result, secret, SECRET_LEN);
+    if (hmac_sha1((const char *)time_buf, TIME_LEN, hmac_result, secret, SECRET_LEN) != FKO_SUCCESS)
+    {
+        return 0;
+    }
 
     //// TODO: refactor
-	totp = dynamic_truncation(hmac_result) % (int)floor(pow(10.0, DIGITS)); 
-    return (int)totp;
+	*totp_code = dynamic_truncation(hmac_result) % (int)floor(pow(10.0, DIGITS)); 
+    return 1;
 }
