@@ -132,6 +132,7 @@ enum
     FWKNOP_CLI_ARG_RESOLVE_IP_HTTPS,
     FWKNOP_CLI_ARG_RESOLVE_HTTP_ONLY,
     FWKNOP_CLI_ARG_WGET_CMD,
+    FWKNOP_CLI_ARG_TOTP_CODE,
     FWKNOP_CLI_ARG_NO_SAVE_ARGS,
     FWKNOP_CLI_LAST_ARG
 } fwknop_cli_arg_t;
@@ -2470,9 +2471,10 @@ config_init(fko_cli_options_t *options, int argc, char **argv)
                 options->input_fd = strtol_wrapper(optarg, 0,
                         -1, EXIT_UPON_ERR, &is_err);
                 break;
-            // TODO: add TOTP case
+            //// TODO: add TOTP case
             case TOTP_MODE:
                 options->totp_mode = 1;
+                //// TODO: parse TOTP from cmdline
                 break;
             default:
                 usage();

@@ -141,8 +141,10 @@ typedef struct fko_cli_options
 
     short digest_type;
     int encryption_mode;
-    // TODO: TOTP
+    //// TODO: TOTP
     int totp_mode;
+    //// TODO: refactor to use a constant
+    char totp_code[8];
 
     int spa_icmp_type;  /* only used in '-P icmp' mode */
     int spa_icmp_code;  /* only used in '-P icmp' mode */
