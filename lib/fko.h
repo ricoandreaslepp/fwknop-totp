@@ -695,7 +695,7 @@ DLL_API int fko_encryption_type(const char * const enc_data);
  *
  * \return TODO: TOTP
  */
-DLL_API int fko_totp(unsigned int *totp_code);
+DLL_API int fko_totp(unsigned int *totp_code, const char * const secret);
 
 /**
  * \brief generates random keys

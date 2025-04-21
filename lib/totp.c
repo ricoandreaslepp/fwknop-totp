@@ -17,29 +17,20 @@ dynamic_truncation(unsigned char* hmac_result)
 }
 
 int 
-fko_totp(uint32_t *totp_code)
+fko_totp(uint32_t *totp_code, const char * const secret)
 {
     // key and counter
     uint8_t hmac_result[HMAC_LENGTH];
-
-    //// TODO: secret generation
-    // configure the secret (K)
-    const char secret[] = "12345678901234567890";
 
     // configure time timestamp (T)
     uint64_t T = (time(NULL) - T0)/X;
     char time_buf[TIME_LEN] = {0};
 
-    //// TODO: THIS SHOULD NOT BE STATIC
-    // int hex_len = 4;
-    // for (size_t i = 1; i <= hex_len; i++)
-    // {
-    //     time_buf[TIME_LEN - i] = (char)(((T >> 4) % 0x10) << 4 | (T % 0x10));
-    //     T >>= 8;
-    // }
-
-    // assign the hex values
-    time_buf[TIME_LEN - 1] = (char)0x1; // test vector 1 from RFC6238
+    for (size_t i = 1; i <= TIME_LEN; i++)
+    {
+        time_buf[TIME_LEN - i] = (char)(((T >> 4) % 0x10) << 4 | (T % 0x10));
+        T >>= 8;
+    }
 
     if (hmac_sha1((const char *)time_buf, TIME_LEN, hmac_result, secret, SECRET_LEN) != FKO_SUCCESS)
     {

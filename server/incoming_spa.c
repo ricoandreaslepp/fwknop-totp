@@ -1011,7 +1011,46 @@ incoming_spa(fko_srv_options_t *opts)
         enc_type = fko_encryption_type((char *)spa_pkt->packet_data);
 
         // TODO: handle TOTP encryption branch
-        // TODO: calculate AES secret with PBKDF2
+        // TODO: calculate AES secret with key-derivation
+        //// TODO: secret generation
+        // configure the secret (K)
+        const char secret[] = "12345678901234567890";
+
+        // store the final TOTP
+        uint32_t totp_code;
+
+        if (!fko_totp(&totp_code, secret))
+        {
+            log_msg(LOG_ERR,
+                "Unexpected error on TOTP generation.");
+            continue;
+        }
+
+        log_msg(LOG_INFO,
+            "Calculated TOTP: %d",
+            totp_code);
+
+        const int DIGITS = 8;
+
+        char totp[16] = {0};
+        for (size_t i = 1; i <= DIGITS; i++)
+        {
+            totp[DIGITS - i] = (char)('0' + (totp_code % 10));
+            totp_code /= 10;
+        }
+        //// TODO: temporary workaround to get a 128-bit key for AES
+        memcpy(totp + DIGITS, totp, DIGITS);
+
+        log_msg(LOG_INFO,
+            "Derived workaround AES key: %s",
+            totp);
+
+        // assign the testing TOTP key
+        memcpy(acc->key, totp, 16);
+
+        log_msg(LOG_INFO,
+            "Replaced Rijndael key in memory: %s",
+            acc->key);
 
         if(acc->use_rijndael)
             handle_rijndael_enc(acc, spa_pkt, &spadat, &ctx,
