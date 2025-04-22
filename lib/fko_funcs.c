@@ -365,6 +365,8 @@ fko_destroy(fko_ctx_t ctx)
     return(zero_free_rv);
 }
 
+/* TODO: initial secret generation */
+
 /* Generate Rijndael and HMAC keys from /dev/random and base64
  * encode them
 */
@@ -416,6 +418,8 @@ fko_key_gen(char * const key_base64, const int key_len,
 
     return(FKO_SUCCESS);
 }
+
+/* TODO: TOTP base32 enc/dec */
 
 /* Provide an FKO wrapper around base64 encode/decode functions
 */
