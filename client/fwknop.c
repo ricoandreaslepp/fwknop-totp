@@ -391,20 +391,47 @@ main(int argc, char **argv)
         key_len = 16;
     }
 
-    // TODO: add PBKDF2 if TOTP option is specified
     if(options.totp_mode)
     {
-        log_msg(LOG_VERBOSITY_NORMAL, "Using TOTP");
-
-        // TODO: make dynamic
         char *totp_buf = NULL;
-        totp_buf = getpasswd("Enter TOTP: ", options.input_fd);
-        key_len = 16;
 
-        // int passlen = 16;
-        // TODO: should I use the EVP methods? https://docs.openssl.org/master/man7/EVP_KDF-PBKDF2/
-        // ref: https://docs.openssl.org/1.1.1/man3/PKCS5_PBKDF2_HMAC/
-        // PKCS5_PBKDF2_HMAC_SHA1(totp_buf, passlen, NULL, 0, 1000, key_len, key);
+        /* TODO: ensure the length of the input, this is probably a bof */
+        totp_buf = getpasswd("Enter TOTP: ", options.input_fd);
+        key_len = 6;
+        log_msg(LOG_VERBOSITY_NORMAL, "Read TOTP from user: %s", totp_buf);
+
+        /* TODO: would be better to do this in the libfko space & use pow() */
+        uint32_t totp_code = 0;
+        for (size_t i = 0; i < key_len; i++)
+        {
+            int pos = 1;
+            if(i > 0)
+            {
+                for (size_t j = 0; j < i; j++)
+                {
+                    pos *= 10;
+                }
+            }
+            totp_code += pos * (int)(totp_buf[key_len - i - 1] - '0');
+        }
+        log_msg(LOG_VERBOSITY_NORMAL, "Converted to integer: %d", totp_code);
+
+        log_msg(LOG_VERBOSITY_NORMAL, "Using timestamp %ld and secret %s", (uint64_t)(time(NULL) / 30), key);
+
+        // overwrites the whole buffer, so no need to clear
+        char *temp_key = key;
+        if(!fko_totp_key_derivation(totp_code, &temp_key, &key_len))
+            clean_exit(ctx, &options, key, &key_len,
+                hmac_key, &hmac_key_len, EXIT_FAILURE);
+        
+        /* copies EXACTLY 32 bytes from temp_key to key */
+        memcpy(key, temp_key, key_len);
+
+        /* TODO: probably strncpy(..., strlen("hello")); works */
+        // strlcpy(key, "hello", strlen("hello") + 1);
+        // key_len = strlen("hello");
+        log_msg(LOG_VERBOSITY_NORMAL, "Using derived key %s with length %d", key, key_len);
+
     } 
     else
     {
