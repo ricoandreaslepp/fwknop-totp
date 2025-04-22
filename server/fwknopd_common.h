@@ -403,6 +403,10 @@ typedef struct acc_stanza
     int                  hmac_key_len;
     char                *hmac_key_base64;
     int                  hmac_type;
+    char                *totp_key;
+    int                  totp_key_len;
+    char                *totp_key_base64; // TODO: RFC 4648 defines Base32 as the standard encoding
+    unsigned char        use_totp;
     unsigned char        use_rijndael;
     int                  fw_access_timeout;
     int                  max_fw_timeout;
