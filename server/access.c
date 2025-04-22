@@ -915,6 +915,8 @@ free_acc_stanza_data(acc_stanza_t *acc)
         free(acc->hmac_key_base64);
     }
 
+    /* TODO: free memory allocated by TOTP keys */
+
     if(acc->cmd_sudo_exec_user != NULL)
         free(acc->cmd_sudo_exec_user);
 
@@ -1273,8 +1275,9 @@ acc_data_is_valid(fko_srv_options_t *opts,
 
     if(((acc->key == NULL || acc->key_len == 0)
       && ((acc->gpg_decrypt_pw == NULL || !strlen(acc->gpg_decrypt_pw))
-          && acc->gpg_allow_no_pw == 0))
-      || (acc->use_rijndael == 0 && acc->use_gpg == 0 && acc->gpg_allow_no_pw == 0))
+          && acc->gpg_allow_no_pw == 0)
+      && (acc->totp_key == NULL || acc->totp_key_len == 0))
+      || (acc->use_rijndael == 0 && acc->use_gpg == 0 && acc->gpg_allow_no_pw == 0 && acc->use_totp == 0))
     {
         log_msg(LOG_ERR,
             "[*] No keys found for access stanza source: '%s'", acc->source
@@ -1731,6 +1734,31 @@ parse_access_file(fko_srv_options_t *opts, char *access_filename, int *depth)
             }
             add_acc_string(&(curr_acc->hmac_key), val, file_ptr, opts);
             curr_acc->hmac_key_len = strlen(curr_acc->hmac_key);
+        }
+        /* TOTP key base64 */
+        else if(CONF_VAR_IS(var, "TOTP_KEY_BASE64"))
+        {
+            if (! is_base64((unsigned char *) val, strlen(val)))
+            {
+                log_msg(LOG_ERR,
+                    "[*] TOTP_KEY_BASE64 argument '%s' doesn't look like base64-encoded data.",
+                    val);
+                fclose(file_ptr);
+                return EXIT_FAILURE;
+            }
+            add_acc_string(&(curr_acc->totp_key_base64), val, file_ptr, opts);
+            add_acc_b64_string(&(curr_acc->totp_key), &(curr_acc->totp_key_len),
+                    curr_acc->totp_key_base64, file_ptr, opts);
+            add_acc_bool(&(curr_acc->use_rijndael), "Y"); /* TODO: may refactor to use only acc->use_totp at some point */
+            add_acc_bool(&(curr_acc->use_totp), "Y");
+        }
+        /* TOTP key */
+        else if(CONF_VAR_IS(var, "TOTP_KEY"))
+        {
+            add_acc_string(&(curr_acc->totp_key), val, file_ptr, opts);
+            curr_acc->totp_key_len = strlen(curr_acc->totp_key);
+            add_acc_bool(&(curr_acc->use_rijndael), "Y"); /* TODO: may refactor to use only acc->use_totp at some point */
+            add_acc_bool(&(curr_acc->use_totp), "Y");
         }
         else if(CONF_VAR_IS(var, "FW_ACCESS_TIMEOUT"))
         {
