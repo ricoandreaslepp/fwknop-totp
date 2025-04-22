@@ -583,13 +583,33 @@ check_mode_ctx(spa_data_t *spadat, fko_ctx_t *ctx, int attempted_decrypt,
     return 1;
 }
 
+/* TODO: use this function */
+static int
+handle_totp_enc(acc_stanza_t *acc, spa_pkt_info_t *spa_pkt,
+    spa_data_t *spadat, fko_ctx_t *ctx, int *attempted_decrypt,
+    int *cmd_exec_success, const int enc_type, const int stanza_num,
+    int *res)
+{
+    /* TODO: look into || acc->enable_cmd_exec */
+    if (acc->use_totp && acc->use_rijndael && enc_type == FKO_ENCRYPTION_RIJNDAEL)
+    {
+        *res = fko_new_with_data(ctx, (char *)spa_pkt->packet_data,
+            acc->key, acc->key_len, acc->encryption_mode, acc->hmac_key,
+            acc->hmac_key_len, acc->hmac_type);
+        *attempted_decrypt = 1;
+        if(*res == FKO_SUCCESS)
+            *cmd_exec_success = 1;
+    }
+    return 1;
+}
+
 static void
 handle_rijndael_enc(acc_stanza_t *acc, spa_pkt_info_t *spa_pkt,
         spa_data_t *spadat, fko_ctx_t *ctx, int *attempted_decrypt,
         int *cmd_exec_success, const int enc_type, const int stanza_num,
         int *res)
 {
-    if(enc_type == FKO_ENCRYPTION_RIJNDAEL || acc->enable_cmd_exec)
+    if(cmd_exec_success == 0 && enc_type == FKO_ENCRYPTION_RIJNDAEL || acc->enable_cmd_exec)
     {
         *res = fko_new_with_data(ctx, (char *)spa_pkt->packet_data,
             acc->key, acc->key_len, acc->encryption_mode, acc->hmac_key,
@@ -1010,52 +1030,66 @@ incoming_spa(fko_srv_options_t *opts)
         */
         enc_type = fko_encryption_type((char *)spa_pkt->packet_data);
 
-        // TODO: handle TOTP encryption branch
-        // TODO: calculate AES secret with key-derivation
-        //// TODO: secret generation
-        // configure the secret (K)
-        const char secret[] = "12345678901234567890";
-
-        // store the final TOTP
-        uint32_t totp_code;
-
-        if (!fko_totp(&totp_code, secret))
+        /* Try to decrypt packet with key derived from TOTP
+         * TODO: this currently eats the default AES key and only uses TOTP 
+        */
+        if(acc->use_totp)
         {
-            log_msg(LOG_ERR,
-                "Unexpected error on TOTP generation.");
-            continue;
-        }
+            /* store final TOTP and current timestamp for TOTP */
+            uint32_t totp_code = 0;
+            uint64_t timestamp = (uint64_t)time(NULL);
 
-        log_msg(LOG_INFO,
-            "Calculated TOTP: %d",
-            totp_code);
+            /* RFC 6238 recommends time window of 30 seconds, meaning 1 iteration on both sides */
+            for (char time_step = 1; time_step >= -1; --time_step)
+            {
+                /* TODO: a bit of a nasty hack for the overwriting issue */
+                /* TODO: check initialization of acc->totp_key_len, should be +1 */
+                /* TODO: malloc outside of loop */
+                acc->key = malloc(acc->totp_key_len + 1);
+                strncpy(acc->key, acc->totp_key, acc->totp_key_len);
+                acc->key_len = strlen(acc->totp_key);
 
-        const int DIGITS = 8;
+                log_msg(LOG_DEBUG,
+                    "Init on new time step: %s with length %d", acc->key, acc->key_len);
 
-        char totp[16] = {0};
-        for (size_t i = 1; i <= DIGITS; i++)
-        {
-            totp[DIGITS - i] = (char)('0' + (totp_code % 10));
-            totp_code /= 10;
-        }
-        //// TODO: temporary workaround to get a 128-bit key for AES
-        memcpy(totp + DIGITS, totp, DIGITS);
+                /* calculates TOTPs based on initial TOTP secret, timestamp and step */
+                if(!fko_totp_from_secret(&totp_code, acc->key, &timestamp, &time_step))
+                {
+                    log_msg(LOG_ERR,
+                        "Unexpected error on TOTP generation.");
+                    continue;
+                }
 
-        log_msg(LOG_INFO,
-            "Derived workaround AES key: %s",
-            totp);
+                log_msg(LOG_DEBUG,
+                    "Generated TOTP: %d",
+                    totp_code);
 
-        // assign the testing TOTP key
-        memcpy(acc->key, totp, 16);
+                /* overwrites acc->key with the current derived hash */
+                if(!fko_totp_key_derivation(totp_code, &(acc->key), &(acc->key_len)))
+                {
+                    log_msg(LOG_ERR,
+                        "Unexpected error on TOTP key derivation.");
+                    continue;
+                }
 
-        log_msg(LOG_INFO,
-            "Replaced Rijndael key in memory: %s",
-            acc->key);
+                /* TODO: should double-check the char array sizes */
+                log_msg(LOG_DEBUG,
+                    "Used initial TOTP key %s, to derive current key %.32s with length %d", acc->totp_key, acc->key, acc->key_len);
 
-        if(acc->use_rijndael)
-            handle_rijndael_enc(acc, spa_pkt, &spadat, &ctx,
+                handle_totp_enc(acc, spa_pkt, &spadat, &ctx,
                         &attempted_decrypt, &cmd_exec_success, enc_type,
                         stanza_num, &res);
+                    
+                /* found a successful decryption time step */
+                if(cmd_exec_success == 1) break;
+            }
+        }
+
+        /* TODO: what if TOTP was successful */
+        if(!acc->use_rijndael)
+            handle_rijndael_enc(acc, spa_pkt, &spadat, &ctx,
+                &attempted_decrypt, &cmd_exec_success, enc_type,
+                stanza_num, &res);
 
         if(! handle_gpg_enc(acc, spa_pkt, &spadat, &ctx, &attempted_decrypt,
                     cmd_exec_success, enc_type, stanza_num, &res))
