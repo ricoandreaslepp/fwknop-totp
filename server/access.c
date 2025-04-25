@@ -1749,7 +1749,6 @@ parse_access_file(fko_srv_options_t *opts, char *access_filename, int *depth)
             add_acc_string(&(curr_acc->totp_key_base64), val, file_ptr, opts);
             add_acc_b64_string(&(curr_acc->totp_key), &(curr_acc->totp_key_len),
                     curr_acc->totp_key_base64, file_ptr, opts);
-            add_acc_bool(&(curr_acc->use_rijndael), "Y"); /* TODO: may refactor to use only acc->use_totp at some point */
             add_acc_bool(&(curr_acc->use_totp), "Y");
         }
         /* TOTP key */
@@ -1757,7 +1756,6 @@ parse_access_file(fko_srv_options_t *opts, char *access_filename, int *depth)
         {
             add_acc_string(&(curr_acc->totp_key), val, file_ptr, opts);
             curr_acc->totp_key_len = strlen(curr_acc->totp_key);
-            add_acc_bool(&(curr_acc->use_rijndael), "Y"); /* TODO: may refactor to use only acc->use_totp at some point */
             add_acc_bool(&(curr_acc->use_totp), "Y");
         }
         else if(CONF_VAR_IS(var, "FW_ACCESS_TIMEOUT"))

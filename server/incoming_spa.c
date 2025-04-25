@@ -583,7 +583,6 @@ check_mode_ctx(spa_data_t *spadat, fko_ctx_t *ctx, int attempted_decrypt,
     return 1;
 }
 
-/* TODO: use this function */
 static int
 handle_totp_enc(acc_stanza_t *acc, spa_pkt_info_t *spa_pkt,
     spa_data_t *spadat, fko_ctx_t *ctx, int *attempted_decrypt,
@@ -591,7 +590,7 @@ handle_totp_enc(acc_stanza_t *acc, spa_pkt_info_t *spa_pkt,
     int *res)
 {
     /* TODO: look into || acc->enable_cmd_exec */
-    if (acc->use_totp && acc->use_rijndael && enc_type == FKO_ENCRYPTION_RIJNDAEL)
+    if (acc->use_totp && enc_type == FKO_ENCRYPTION_RIJNDAEL)
     {
         *res = fko_new_with_data(ctx, (char *)spa_pkt->packet_data,
             acc->key, acc->key_len, acc->encryption_mode, acc->hmac_key,
@@ -608,8 +607,8 @@ handle_rijndael_enc(acc_stanza_t *acc, spa_pkt_info_t *spa_pkt,
         spa_data_t *spadat, fko_ctx_t *ctx, int *attempted_decrypt,
         int *cmd_exec_success, const int enc_type, const int stanza_num,
         int *res)
-{
-    if(cmd_exec_success == 0 && enc_type == FKO_ENCRYPTION_RIJNDAEL || acc->enable_cmd_exec)
+{   
+    if(*cmd_exec_success == 0 && (enc_type == FKO_ENCRYPTION_RIJNDAEL || acc->enable_cmd_exec))
     {
         *res = fko_new_with_data(ctx, (char *)spa_pkt->packet_data,
             acc->key, acc->key_len, acc->encryption_mode, acc->hmac_key,
@@ -1031,20 +1030,24 @@ incoming_spa(fko_srv_options_t *opts)
         enc_type = fko_encryption_type((char *)spa_pkt->packet_data);
 
         /* Try to decrypt packet with key derived from TOTP
-         * TODO: this currently eats the default AES key and only uses TOTP 
+         * restore key to previous state, if the decryption fails
         */
         if(acc->use_totp)
         {
             /* store final TOTP and current timestamp for TOTP */
             uint32_t totp_code = 0;
             uint64_t timestamp = (uint64_t)time(NULL);
+            
+            /* store the current access key, since we need to restore it later */
+            char temp_key[acc->key_len];
+            memcpy(temp_key, acc->key, acc->key_len);
 
             /* RFC 6238 recommends time window of 30 seconds, meaning 1 iteration on both sides */
             for (char time_step = 1; time_step >= -1; --time_step)
             {
                 /* TODO: a bit of a nasty hack for the overwriting issue */
                 /* TODO: check initialization of acc->totp_key_len, should be +1 */
-                /* TODO: malloc outside of loop */
+                /* TODO: potential memory leak */
                 acc->key = malloc(acc->totp_key_len + 1);
                 strncpy(acc->key, acc->totp_key, acc->totp_key_len);
                 acc->key_len = strlen(acc->totp_key);
@@ -1083,10 +1086,14 @@ incoming_spa(fko_srv_options_t *opts)
                 /* found a successful decryption time step */
                 if(cmd_exec_success == 1) break;
             }
+
+            /* restore the key */
+            memcpy(acc->key, temp_key, acc->key_len);
+            /* clear buffer */
+            memset(temp_key, 0, acc->key_len);
         }
 
-        /* TODO: what if TOTP was successful */
-        if(!acc->use_rijndael)
+        if(acc->use_rijndael)
             handle_rijndael_enc(acc, spa_pkt, &spadat, &ctx,
                 &attempted_decrypt, &cmd_exec_success, enc_type,
                 stanza_num, &res);
