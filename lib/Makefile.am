@@ -9,7 +9,7 @@ libfko_source_files = \
     fko_user.c fko_user.h md5.c md5.h rijndael.c rijndael.h sha1.c \
     sha1.h sha2.c sha2.h sha3.c sha3.h fko_context.h fko_state.h \
     gpgme_funcs.c gpgme_funcs.h \
-    totp.c
+    totp.c totp.h
 
 if WANT_C_UNIT_TESTS
 noinst_PROGRAMS     = fko_utests

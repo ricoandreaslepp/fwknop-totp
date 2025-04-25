@@ -32,7 +32,6 @@
 #include "utils.h"
 #include "getpasswd.h"
 
-#include <openssl/evp.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 
