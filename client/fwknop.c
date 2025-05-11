@@ -40,6 +40,8 @@
 */
 static int get_keys(fko_ctx_t ctx, fko_cli_options_t *options,
     char *key, int *key_len, char *hmac_key, int *hmac_key_len);
+static int get_totp(fko_ctx_t ctx, fko_cli_options_t *options,
+    char *totp);
 static void errmsg(const char *msg, const int err);
 static int prev_exec(fko_cli_options_t *options, int argc, char **argv);
 static int get_save_file(char *args_save_file);
@@ -390,51 +392,18 @@ main(int argc, char **argv)
         key_len = 16;
     }
 
-    if(options.totp_mode)
+    if(options.use_totp)
     {
-        char *totp_buf = NULL;
-
-        /* TODO: ensure the length of the input, this is probably a bof */
-        totp_buf = getpasswd("Enter TOTP: ", options.input_fd);
-        key_len = 6;
-        log_msg(LOG_VERBOSITY_NORMAL, "Read TOTP from user: %s", totp_buf);
-
-        /* TODO: would be better to do this in the libfko space & use pow() */
-        uint32_t totp_code = 0;
-        for (size_t i = 0; i < key_len; i++)
-        {
-            int pos = 1;
-            if(i > 0)
-            {
-                for (size_t j = 0; j < i; j++)
-                {
-                    pos *= 10;
-                }
-            }
-            totp_code += pos * (int)(totp_buf[key_len - i - 1] - '0');
-        }
-        log_msg(LOG_VERBOSITY_NORMAL, "Converted to integer: %d", totp_code);
-
-        log_msg(LOG_VERBOSITY_NORMAL, "Using timestamp %ld and secret %s", (uint64_t)(time(NULL) / 30), key);
-
-        // overwrites the whole buffer, so no need to clear
-        char *temp_key = key;
-        if(!fko_totp_key_derivation(totp_code, &temp_key, &key_len))
-            clean_exit(ctx, &options, key, &key_len,
-                hmac_key, &hmac_key_len, EXIT_FAILURE);
-        
-        /* copies EXACTLY 32 bytes from temp_key to key */
-        memcpy(key, temp_key, key_len);
-
-        /* TODO: probably strncpy(..., strlen("hello")); works */
-        // strlcpy(key, "hello", strlen("hello") + 1);
-        // key_len = strlen("hello");
-        log_msg(LOG_VERBOSITY_NORMAL, "Using derived key %s with length %d", key, key_len);
-
+        /* TODO: check for valid responses */
+        char *temp = malloc(6);
+        get_totp(ctx, &options, temp);
+        fko_set_totp(ctx, temp);
+        temp = NULL;
+        free(temp);
     } 
     else
     {
-        log_msg(LOG_VERBOSITY_NORMAL, "Not using TOTP :(");
+        log_msg(LOG_VERBOSITY_NORMAL, "Not using TOTP");
     }
 
     /* Finalize the context data (encrypt and encode the SPA data)
@@ -1284,6 +1253,32 @@ get_keys(fko_ctx_t ctx, fko_cli_options_t *options,
     }
 
     return 1;
+}
+
+/* Prompt for and receive a TOTP
+*/
+static int
+get_totp(fko_ctx_t ctx, fko_cli_options_t *options,
+    char *totp)
+{
+    char   *key_tmp = NULL;
+    if (options->use_totp)
+    {
+        key_tmp = getpasswd("Enter TOTP: ", options->input_fd);
+        if(key_tmp == NULL)
+        {
+            log_msg(LOG_VERBOSITY_ERROR, "[*] get_totp() error.");
+            return 0;
+        }
+        /* TODO: ensure the length of the input */
+        memcpy(totp, key_tmp, 6);
+
+        log_msg(LOG_VERBOSITY_NORMAL, "Read TOTP from user: %s", key_tmp);
+    }
+    else
+    {
+        log_msg(LOG_DEFAULT_VERBOSITY, "Did not read TOTP from user");
+    }
 }
 
 /* Display an FKO error message.
