@@ -16,6 +16,49 @@ dynamic_truncation(unsigned char* hmac_result)
     return bin_code;
 }
 
+/* Used by the client to set the TOTP value inside the context
+*/
+int
+fko_set_totp(fko_ctx_t ctx, const char * const totp_code)
+{
+    /* Must be initialized
+    */
+    if(!CTX_INITIALIZED(ctx))
+        return FKO_ERROR_CTX_NOT_INITIALIZED;
+
+    /* Clear previous buffer
+    */
+    if(ctx->totp != NULL)
+        free(ctx->totp);
+
+    /* TODO: need to verify the memory allocation */
+    ctx->totp = calloc(1, DIGITS+1); 
+    if(ctx->totp == NULL)
+        return(FKO_ERROR_MEMORY_ALLOCATION);
+
+    ctx->totp = strdup(totp_code);
+    return 1;
+}
+
+/* Used by the server to get the TOTP value from the context
+*/
+int
+fko_get_totp(fko_ctx_t ctx, char **totp_code)
+{
+    /* Must be initialized
+    */
+    if(!CTX_INITIALIZED(ctx))
+        return(FKO_ERROR_CTX_NOT_INITIALIZED);
+
+    /* TODO: Is this necessary?*/
+    // if(totp_code == NULL)
+    //     return(FKO_ERROR_INVALID_DATA);
+
+    *totp_code = ctx->totp;
+
+    return(FKO_SUCCESS);
+}
+
 /* TODO: considering passing TOTP code by reference here as well */
 
 int
@@ -28,7 +71,11 @@ fko_totp_key_derivation(uint32_t totp_code, char **key, int *key_len)
         totp[DIGITS - i] = (char)('0' + (totp_code % 10));
         totp_code /= 10;
     }
+
     /* TODO: verify memory allocation */
+    if(key != NULL)
+        free(key);
+
     *key = malloc(SHA256_DIGEST_LEN + 1);
 
     // calculate and store hash
@@ -40,6 +87,8 @@ fko_totp_key_derivation(uint32_t totp_code, char **key, int *key_len)
     return 1;
 }
 
+/* Calculate TOTP based on initial secret and current timestamp
+*/
 int 
 fko_totp_from_secret(uint32_t *totp_code, const char * const secret, uint64_t *timestamp, char *time_step)
 {

@@ -1,6 +1,10 @@
+#ifndef __TOTP_H__
+#define __TOTP_H__
+
 // libfko imports
 #include "fko.h"
-#include "hmac.h" // already includes "digest.h"
+#include "fko_common.h"
+#include "hmac.h"
 
 // others
 #include <math.h>
@@ -15,3 +19,5 @@
 #define DIGITS 6 // OTP digits
 #define X 30 // default time step
 #define T0 0 // default value
+
+#endif /* __TOTP_H__ */
