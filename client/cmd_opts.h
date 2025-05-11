@@ -66,7 +66,7 @@ enum {
     FD_SET_STDIN,
     FD_SET_ALT,
     FAULT_INJECTION_TAG,
-    TOTP_MODE,
+    USE_TOTP,
 
     /* Put GPG-related items below the following line */
     GPG_ENCRYPTION      = 0x200,
@@ -159,7 +159,7 @@ static struct option cmd_opts[] =
     {"verbose",             0, NULL, 'v'},
     {"version",             0, NULL, 'V'},
     {"wget-cmd",            1, NULL, 'w'},
-    {"totp",                0, NULL, TOTP_MODE},
+    {"totp",                0, NULL, USE_TOTP},
     // TODO: add TOTP cmdline option
     {0, 0, 0, 0}
 };
