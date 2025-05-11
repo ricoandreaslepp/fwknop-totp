@@ -1,7 +1,7 @@
 lib_LTLIBRARIES     = libfko.la
 
 libfko_source_files = \
-    base64.c base64.h cipher_funcs.c cipher_funcs.h digest.c digest.h \
+    base32.c base32.h base64.c base64.h cipher_funcs.c cipher_funcs.h digest.c digest.h \
     fko_client_timeout.c fko_common.h fko_digest.c fko_encode.c \
     fko_decode.c fko_encryption.c fko_error.c fko_funcs.c fko_message.c \
     fko_message.h fko_nat_access.c fko_rand_value.c fko_server_auth.c \
