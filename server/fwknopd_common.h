@@ -405,7 +405,7 @@ typedef struct acc_stanza
     int                  hmac_type;
     char                *totp_key;
     int                  totp_key_len;
-    char                *totp_key_base64; // TODO: RFC 4648 defines Base32 as the standard encoding
+    char                *totp_key_base32;
     unsigned char        use_totp;
     unsigned char        use_rijndael;
     int                  fw_access_timeout;
@@ -628,6 +628,7 @@ typedef struct spa_data
     char            pkt_destination_ip[MAX_IPV4_STR_LEN];
     char            spa_message_remain[1024]; /* --DSS FIXME: arbitrary bounds */
     char           *nat_access;
+    char           *totp;
     char           *server_auth;
     unsigned int    client_timeout;
     unsigned int    fw_access_timeout;
@@ -684,6 +685,7 @@ typedef struct fko_srv_options
     int  key_len;
     int  hmac_key_len;
     int  hmac_type;
+    int  totp_key_len;
 
 #if USE_FILE_CACHE
     struct digest_cache_list *digest_cache;   /* In-memory digest cache list */
