@@ -912,6 +912,7 @@ dump_ctx_to_buffer(fko_ctx_t ctx, char *dump_buf, size_t dump_buf_len)
     char       *enc_data        = NULL;
     char       *hmac_data       = NULL;
     char       *spa_digest      = NULL;
+    char       *totp            = NULL;
 #if HAVE_LIBGPGME
     char          *gpg_signer        = NULL;
     char          *gpg_recip         = NULL;
@@ -955,6 +956,7 @@ dump_ctx_to_buffer(fko_ctx_t ctx, char *dump_buf, size_t dump_buf_len)
         RETURN_ON_FKO_ERROR(err, fko_get_spa_message(ctx, &spa_message));
         RETURN_ON_FKO_ERROR(err, fko_get_spa_nat_access(ctx, &nat_access));
         RETURN_ON_FKO_ERROR(err, fko_get_spa_server_auth(ctx, &server_auth));
+        RETURN_ON_FKO_ERROR(err, fko_get_totp(ctx, &totp));
         RETURN_ON_FKO_ERROR(err, fko_get_spa_client_timeout(ctx, &client_timeout));
         RETURN_ON_FKO_ERROR(err, fko_get_spa_digest_type(ctx, &digest_type));
         RETURN_ON_FKO_ERROR(err, fko_get_spa_hmac_type(ctx, &hmac_type));
@@ -1012,6 +1014,7 @@ dump_ctx_to_buffer(fko_ctx_t ctx, char *dump_buf, size_t dump_buf_len)
         cp += append_msg_to_buf(dump_buf+cp, dump_buf_len-cp, " Message String: %s\n", spa_message == NULL ? NULL_STRING : spa_message);
         cp += append_msg_to_buf(dump_buf+cp, dump_buf_len-cp, "     Nat Access: %s\n", nat_access == NULL ? NULL_STRING : nat_access);
         cp += append_msg_to_buf(dump_buf+cp, dump_buf_len-cp, "    Server Auth: %s\n", server_auth == NULL ? NULL_STRING : server_auth);
+        cp += append_msg_to_buf(dump_buf+cp, dump_buf_len-cp, "           TOTP: %s\n", totp == NULL ? NULL_STRING : totp);
         cp += append_msg_to_buf(dump_buf+cp, dump_buf_len-cp, " Client Timeout: %u\n", client_timeout);
         cp += append_msg_to_buf(dump_buf+cp, dump_buf_len-cp, "    Digest Type: %u (%s)\n", digest_type, digest_str);
         cp += append_msg_to_buf(dump_buf+cp, dump_buf_len-cp, "      HMAC Type: %u (%s)\n", hmac_type, hmac_type == 0 ? "None" : hmac_str);
