@@ -292,6 +292,10 @@ get_spa_data_fields(fko_ctx_t ctx, spa_data_t *spdat)
     if(res != FKO_SUCCESS)
         return(res);
 
+    res = fko_get_totp(ctx, &(spdat->totp));
+    if(res != FKO_SUCCESS)
+        return(res);
+
     res = fko_get_spa_server_auth(ctx, &(spdat->server_auth));
     if(res != FKO_SUCCESS)
         return(res);
@@ -601,6 +605,40 @@ handle_totp_enc(acc_stanza_t *acc, spa_pkt_info_t *spa_pkt,
     }
     return 1;
 }
+
+static void
+verify_totp(acc_stanza_t *acc, spa_pkt_info_t *spa_pkt,
+        spa_data_t *spadat, fko_ctx_t *ctx, int *attempted_decrypt,
+        int *cmd_exec_success, const int enc_type, const int stanza_num,
+        int *res)
+{   
+    /* store final TOTP and current timestamp for TOTP */
+    uint32_t totp_code = 0;
+    uint64_t timestamp = (uint64_t)time(NULL);
+    char time_step = 0;
+    if(!fko_totp_from_secret(&totp_code, acc->totp_key, &timestamp, &time_step))
+    {
+        log_msg(LOG_ERR,
+            "Unexpected error on TOTP generation.");
+    }
+
+    /* convert TOTP from integer to char buffer 
+    */
+    unsigned char totp[6] = {0};
+    for (size_t i = 1; i <= 6; i++)
+    {
+        totp[6 - i] = (char)('0' + (totp_code % 10));
+        totp_code /= 10;
+    }
+
+    /* compare the client and server calculated TOTPs
+    */
+    if(strncmp(spadat->totp, (const char *)totp, 6) != 0)
+        *res = FKO_ERROR_UNKNOWN; /* TODO: FKO_TOTP_ERROR */
+
+    return;
+}
+
 
 static void
 handle_rijndael_enc(acc_stanza_t *acc, spa_pkt_info_t *spa_pkt,
@@ -1029,70 +1067,6 @@ incoming_spa(fko_srv_options_t *opts)
         */
         enc_type = fko_encryption_type((char *)spa_pkt->packet_data);
 
-        /* Try to decrypt packet with key derived from TOTP
-         * restore key to previous state, if the decryption fails
-        */
-        if(acc->use_totp)
-        {
-            /* store final TOTP and current timestamp for TOTP */
-            uint32_t totp_code = 0;
-            uint64_t timestamp = (uint64_t)time(NULL);
-            
-            /* store the current access key, since we need to restore it later */
-            char temp_key[acc->key_len];
-            memcpy(temp_key, acc->key, acc->key_len);
-
-            /* RFC 6238 recommends time window of 30 seconds, meaning 1 iteration on both sides */
-            for (char time_step = 1; time_step >= -1; --time_step)
-            {
-                /* TODO: a bit of a nasty hack for the overwriting issue */
-                /* TODO: check initialization of acc->totp_key_len, should be +1 */
-                /* TODO: potential memory leak */
-                acc->key = malloc(acc->totp_key_len + 1);
-                strncpy(acc->key, acc->totp_key, acc->totp_key_len);
-                acc->key_len = strlen(acc->totp_key);
-
-                log_msg(LOG_DEBUG,
-                    "Init on new time step: %s with length %d", acc->key, acc->key_len);
-
-                /* calculates TOTPs based on initial TOTP secret, timestamp and step */
-                if(!fko_totp_from_secret(&totp_code, acc->key, &timestamp, &time_step))
-                {
-                    log_msg(LOG_ERR,
-                        "Unexpected error on TOTP generation.");
-                    continue;
-                }
-
-                log_msg(LOG_DEBUG,
-                    "Generated TOTP: %d",
-                    totp_code);
-
-                /* overwrites acc->key with the current derived hash */
-                if(!fko_totp_key_derivation(totp_code, &(acc->key), &(acc->key_len)))
-                {
-                    log_msg(LOG_ERR,
-                        "Unexpected error on TOTP key derivation.");
-                    continue;
-                }
-
-                /* TODO: should double-check the char array sizes */
-                log_msg(LOG_DEBUG,
-                    "Used initial TOTP key %s, to derive current key %.32s with length %d", acc->totp_key, acc->key, acc->key_len);
-
-                handle_totp_enc(acc, spa_pkt, &spadat, &ctx,
-                        &attempted_decrypt, &cmd_exec_success, enc_type,
-                        stanza_num, &res);
-                    
-                /* found a successful decryption time step */
-                if(cmd_exec_success == 1) break;
-            }
-
-            /* restore the key */
-            memcpy(acc->key, temp_key, acc->key_len);
-            /* clear buffer */
-            memset(temp_key, 0, acc->key_len);
-        }
-
         if(acc->use_rijndael)
             handle_rijndael_enc(acc, spa_pkt, &spadat, &ctx,
                 &attempted_decrypt, &cmd_exec_success, enc_type,
@@ -1127,7 +1101,7 @@ incoming_spa(fko_srv_options_t *opts)
         */
         log_msg(LOG_DEBUG, "[%s] (stanza #%d) SPA Decode (res=%i):",
             spadat.pkt_source_ip, stanza_num, res);
-
+        
         res = dump_ctx_to_buffer(ctx, dump_buf, sizeof(dump_buf));
         if (res == FKO_SUCCESS)
             log_msg(LOG_DEBUG, "%s", dump_buf);
@@ -1153,6 +1127,23 @@ incoming_spa(fko_srv_options_t *opts)
         {
             log_msg(LOG_ERR,
                 "[%s] (stanza #%d) Unexpected error pulling SPA data from the context: %s",
+                spadat.pkt_source_ip, stanza_num, fko_errstr(res));
+
+            acc = acc->next;
+            continue;
+        }
+
+        /* Verify the TOTP from the SPA packet if the access stanza requires it
+        */
+        if(acc->use_totp)
+            verify_totp(acc, spa_pkt, &spadat, &ctx,
+                &attempted_decrypt, &cmd_exec_success, enc_type,
+                stanza_num, &res);
+
+        if(res != FKO_SUCCESS)
+        {
+            log_msg(LOG_ERR,
+                "[%s] (stanza #%d) Incorrect TOTP: %s",
                 spadat.pkt_source_ip, stanza_num, fko_errstr(res));
 
             acc = acc->next;
