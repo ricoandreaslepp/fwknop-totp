@@ -706,6 +706,28 @@ append_msg_to_buf(char *buf, size_t buf_size, const char* msg, ...)
     return bytes_written;
 }
 
+/* Determine if a buffer contains only characters from the base32
+ * encoding set
+*/
+int
+is_base32(const unsigned char * const buf, const unsigned short int len)
+{
+    unsigned short int  i;
+    int                 rv = 1;
+
+    for(i=0; i<len; i++)
+    {
+        /* the last check is a modified version of isdigit() in range 2-7*/
+        if(!(isupper(buf[i]) || buf[i] == '=' || (buf[i] >= 50 && buf[i] <= 55)))
+        {
+            rv = 0;
+            break;
+        }
+    }
+
+    return rv;
+}
+
 /* Determine if a buffer contains only characters from the base64
  * encoding set
 */
