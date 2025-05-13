@@ -222,7 +222,7 @@ generate_keys(fko_srv_options_t *options)
 {
     char key_base64[MAX_B64_KEY_LEN+1];
     char hmac_key_base64[MAX_B64_KEY_LEN+1];
-    char totp_key_base32[32]; /* TODO: make const */
+    char totp_key_base32[32+1]; /* TODO: make const */
 
     FILE  *key_gen_file_ptr = NULL;
     int res;
@@ -241,6 +241,7 @@ generate_keys(fko_srv_options_t *options)
     /* Zero out the key buffers */
     memset(key_base64, 0x00, sizeof(key_base64));
     memset(hmac_key_base64, 0x00, sizeof(hmac_key_base64));
+    memset(totp_key_base32, 0x00, sizeof(totp_key_base32));
 
     /* Generate the key through libfko */
     res = fko_key_gen(key_base64, options->key_len,

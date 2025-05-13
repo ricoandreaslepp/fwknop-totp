@@ -430,7 +430,7 @@ fko_key_gen(char * const key_base64, const int key_len,
 
     b64_len = b32_encode(totp_key, totp_key_base32, totp_klen);
     if(b64_len < totp_klen)
-        return(FKO_ERROR_INVALID_DATA_FUNCS_GEN_HMAC_ENCODEFAIL);
+        return(FKO_ERROR_INVALID_DATA_FUNCS_GEN_KEY_ENCODEFAIL);
 
     return(FKO_SUCCESS);
 }
