@@ -394,12 +394,18 @@ main(int argc, char **argv)
 
     if(options.use_totp)
     {
-        /* TODO: check for valid responses */
-        char *temp = malloc(6);
-        get_totp(ctx, &options, temp);
-        fko_set_totp(ctx, temp);
-        temp = NULL;
-        free(temp);
+        char *totp = malloc(6);
+        get_totp(ctx, &options, totp);
+
+        res = fko_set_totp(ctx, totp);
+        if(res != FKO_SUCCESS)
+        {
+            errmsg("fko_set_spa_digest_type", res);
+            clean_exit(ctx, &options, key, &key_len,
+                    hmac_key, &hmac_key_len, EXIT_FAILURE);
+        }
+        totp = NULL;
+        free(totp);
     } 
     else
     {
@@ -1270,13 +1276,13 @@ get_totp(fko_ctx_t ctx, fko_cli_options_t *options,
             log_msg(LOG_VERBOSITY_ERROR, "[*] get_totp() error.");
             return 0;
         }
-        /* TODO: ensure the length of the input */
         memcpy(totp, key_tmp, 6);
     }
     else
     {
         log_msg(LOG_VERBOSITY_ERROR, "[-] Could not read TOTP from user.");
     }
+    return 1;
 }
 
 /* Display an FKO error message.
