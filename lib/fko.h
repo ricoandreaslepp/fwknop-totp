@@ -695,15 +695,6 @@ DLL_API int fko_encryption_type(const char * const enc_data);
  *
  * \return TODO: TOTP
  */
-DLL_API int fko_totp_key_derivation(unsigned int totp_code, char **key, int *key_len);
-
-/**
- * \brief TODO: TOTP
- *
- * \param TODO: TOTP
- *
- * \return TODO: TOTP
- */
 DLL_API int fko_totp_from_secret(unsigned int *totp_code, const char * const secret, unsigned long *timestamp, char *time_step);
 
 /**
@@ -1470,6 +1461,7 @@ int register_ts_digest_test(void);
 int register_ts_aes_test(void);
 int register_utils_test(void);
 int register_base64_test(void);
+int register_base32_test(void);
 #endif
 
 #endif /* FKO_H */
