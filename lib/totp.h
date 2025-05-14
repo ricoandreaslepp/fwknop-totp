@@ -13,7 +13,7 @@
 #include <string.h>
 #include <stdint.h>
 
-#define SECRET_LEN 20
+#define TOTP_SECRET_LEN 20
 #define HMAC_LENGTH 20
 #define TIME_LEN 8
 #define DIGITS 6 // OTP digits

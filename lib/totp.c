@@ -77,10 +77,9 @@ fko_totp_from_secret(uint32_t *totp_code, const char * const secret, uint64_t *t
         T >>= 8;
     }
 
-    if(hmac_sha1((const char *)time_buf, TIME_LEN, hmac_result, secret, SECRET_LEN) != FKO_SUCCESS)
+    if(hmac_sha1((const char *)time_buf, TIME_LEN, hmac_result, secret, TOTP_SECRET_LEN) != FKO_SUCCESS)
         return 0;
 
-    //// TODO: refactor
 	*totp_code = dynamic_truncation(hmac_result) % (int)floor(pow(10.0, DIGITS)); 
     return 1;
 }

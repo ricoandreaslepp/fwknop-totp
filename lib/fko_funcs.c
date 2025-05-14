@@ -33,6 +33,7 @@
 #include "base64.h"
 #include "base32.h"
 #include "digest.h"
+#include "totp.h"
 
 /* Initialize an fko context.
 */
@@ -379,7 +380,7 @@ fko_key_gen(char * const key_base64, const int key_len,
 {
     unsigned char key[RIJNDAEL_MAX_KEYSIZE];
     unsigned char hmac_key[SHA512_BLOCK_LEN];
-    unsigned char totp_key[20]; /* TODO: make constant */
+    unsigned char totp_key[TOTP_SECRET_LEN];
     int klen      = key_len;
     int hmac_klen = hmac_key_len;
     int totp_klen = totp_key_len;
@@ -405,7 +406,7 @@ fko_key_gen(char * const key_base64, const int key_len,
 
     if(totp_key_len == FKO_DEFAULT_KEY_LEN)
     {
-        totp_klen = 20; /* TODO: make constant */
+        totp_klen = TOTP_SECRET_LEN;
     }
 
     if((klen < 1) || (klen > RIJNDAEL_MAX_KEYSIZE))
@@ -414,7 +415,8 @@ fko_key_gen(char * const key_base64, const int key_len,
     if((hmac_klen < 1) || (hmac_klen > SHA512_BLOCK_LEN))
         return(FKO_ERROR_INVALID_DATA_FUNCS_GEN_HMACLEN_VALIDFAIL);
 
-    /* TODO: TOTP checks*/
+    if((totp_key < 1) || (totp_klen > TOTP_SECRET_LEN))
+        return(FKO_ERROR_INVALID_DATA_FUNCS_GEN_KEYLEN_VALIDFAIL);
 
     get_random_data(key, klen);
     get_random_data(hmac_key, hmac_klen);
