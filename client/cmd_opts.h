@@ -160,7 +160,6 @@ static struct option cmd_opts[] =
     {"version",             0, NULL, 'V'},
     {"wget-cmd",            1, NULL, 'w'},
     {"totp",                0, NULL, USE_TOTP},
-    // TODO: add TOTP cmdline option
     {0, 0, 0, 0}
 };
 
