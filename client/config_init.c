@@ -2670,7 +2670,6 @@ usage(void)
       "     --time-offset-plus      Add time to outgoing SPA packet timestamp.\n"
       "     --time-offset-minus     Subtract time from outgoing SPA packet\n"
       "                             timestamp.\n"
-      // TODO: help function for TOTP
       "     --totp                  Use TOTP.\n"
     );
 

@@ -561,7 +561,7 @@ fko_decode_spa_data(fko_ctx_t ctx)
             parse_msg_type,       /* SPA msg type */
             parse_msg,            /* SPA msg string */
             parse_nat_msg,        /* SPA NAT msg string */
-            parse_totp,           /* TODO: optional TOTP */
+            parse_totp,           /* optional TOTP field */
             parse_server_auth,    /* optional server authentication method */
             parse_client_timeout  /* client defined timeout */
           };

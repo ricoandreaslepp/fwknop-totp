@@ -59,34 +59,6 @@ fko_get_totp(fko_ctx_t ctx, char **totp_code)
     return(FKO_SUCCESS);
 }
 
-/* TODO: considering passing TOTP code by reference here as well */
-
-int
-fko_totp_key_derivation(uint32_t totp_code, char **key, int *key_len)
-{
-    // convert to hex and write to char buffer
-    unsigned char totp[DIGITS] = {0};
-    for (size_t i = 1; i <= DIGITS; i++)
-    {
-        totp[DIGITS - i] = (char)('0' + (totp_code % 10));
-        totp_code /= 10;
-    }
-
-    /* TODO: verify memory allocation */
-    if(key != NULL)
-        free(key);
-
-    *key = malloc(SHA256_DIGEST_LEN + 1);
-
-    // calculate and store hash
-    sha256(*key, totp, DIGITS);
-
-    // change key size to hash output length
-    *key_len = SHA256_DIGEST_LEN;
-
-    return 1;
-}
-
 /* Calculate TOTP based on initial secret and current timestamp
 */
 int 

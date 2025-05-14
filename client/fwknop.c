@@ -1272,12 +1272,10 @@ get_totp(fko_ctx_t ctx, fko_cli_options_t *options,
         }
         /* TODO: ensure the length of the input */
         memcpy(totp, key_tmp, 6);
-
-        log_msg(LOG_VERBOSITY_NORMAL, "Read TOTP from user: %s", key_tmp);
     }
     else
     {
-        log_msg(LOG_DEFAULT_VERBOSITY, "Did not read TOTP from user");
+        log_msg(LOG_VERBOSITY_ERROR, "[-] Could not read TOTP from user.");
     }
 }
 
