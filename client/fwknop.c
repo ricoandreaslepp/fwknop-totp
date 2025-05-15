@@ -400,7 +400,7 @@ main(int argc, char **argv)
         res = fko_set_totp(ctx, totp);
         if(res != FKO_SUCCESS)
         {
-            errmsg("fko_set_spa_digest_type", res);
+            errmsg("fko_set_totp", res);
             clean_exit(ctx, &options, key, &key_len,
                     hmac_key, &hmac_key_len, EXIT_FAILURE);
         }
